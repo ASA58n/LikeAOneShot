@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>改良版 字幕機能付き高機能画像フィルターエディタ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+            margin-bottom: 30px;
+        }
+        #canvasContainer {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        #canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+        button, select, input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #333333;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #3a7bc8;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #colorWheel {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            background: conic-gradient(
+                hsl(0, 100%, 50%),
+                hsl(60, 100%, 50%),
+                hsl(120, 100%, 50%),
+                hsl(180, 100%, 50%),
+                hsl(240, 100%, 50%),
+                hsl(300, 100%, 50%),
+                hsl(360, 100%, 50%)
+            );
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        #colorWheelPicker {
+            width: 10px;
+            height: 10px;
+            border: 2px solid white;
+            border-radius: 50%;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .subtitle-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .subtitle-input-group input[type="text"] {
+            flex-grow: 1;
+        }
+        .subtitle-input-group button {
+            width: auto;
+        }
+        .twitter-button {
+            background-color: #1DA1F2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .twitter-button:hover {
+            background-color: #1991DB;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Like a One Shot</h1>
+        <p class="description">VRCの写真を映画やゲームのワンシーンみたいに編集するウェブアプリです</p>
+        <div id="canvasContainer">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div class="controls">
+            <div class="control-group">
+                <h3>画像とレターボックス</h3>
+                <input type="file" id="imageUpload" accept="image/*">
+                <button id="addLetterbox">レターボックスを追加</button>
+                <button id="removeLetterbox">レターボックスを削除</button>
+            </div>
+            <div class="control-group">
+                <h3>基本調整</h3>
+                <label for="brightnessSlider">明るさ:</label>
+                <input type="range" id="brightnessSlider" min="-100" max="100" value="0">
+                <label for="contrastSlider">コントラスト:</label>
+                <input type="range" id="contrastSlider" min="-100" max="100" value="0">
+            </div>
+            <div class="control-group">
+                <h3>色相調整</h3>
+                <div id="colorWheel">
+                    <div id="colorWheelPicker"></div>
+                </div>
+                <label for="hueIntensitySlider">色相強度:</label>
+                <input type="range" id="hueIntensitySlider" min="0" max="100" value="100">
+            </div>
+            <div class="control-group">
+                <h3>フィルターと字幕</h3>
+                <label for="filterSelect">フィルター:</label>
+                <select id="filterSelect">
+                    <option value="none">なし</option>
+                    <option value="sepia">セピア</option>
+                    <option value="grayscale">白黒</option>
+                    <option value="invert">色反転</option>
+                </select>
+                <label for="subtitleInput">字幕:</label>
+                <div class="subtitle-input-group">
+                    <input type="text" id="subtitleInput" placeholder="字幕を入力">
+                    <button id="applySubtitle">適用</button>
+                </div>
+                <label for="fontSelect">フォント:</label>
+                <select id="fontSelect">
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier">Courier</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Palatino">Palatino</option>
+                    <option value="Garamond">Garamond</option>
+                    <option value="Bookman">Bookman</option>
+                    <option value="Comic Sans MS">Comic Sans MS</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
+                    <option value="Arial Black">Arial Black</option>
+                    <option value="CustomFont1">てあとりずむ</option>
+                    <option value="CustomFont2">03スマートフォントUI+</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <h3>操作</h3>
+                <button id="resetAdjustments">調整をリセット</button>
+                <button id="downloadBtn">画像をダウンロード</button>
+                <button id="twitterBtn" class="twitter-button">Twitterに投稿</button>
+            </div>
+            <div class="control-group instructions">
+              <h3>操作説明</h3>
+              <ul>
+                  <li><strong>画像アップロード:</strong> 「ファイルを選択」ボタンをクリックして編集したい画像を選択します。</li>
+                  <li><strong>レターボックス:</strong> 「レターボックスを追加」ボタンで上下に黒帯を追加し、映画のような雰囲気を出せます。</li>
+                  <li><strong>明るさ・コントラスト調整:</strong> スライダーを動かして画像の明るさとコントラストを調整します。</li>
+                  <li><strong>色相調整:</strong> カラーホイールをクリックして全体の色調を変更できます。強度スライダーで効果の強さを調整できます。</li>
+                  <li><strong>フィルター:</strong> ドロップダウンメニューからフィルター効果を選択できます。</li>
+                  <li><strong>字幕追加:</strong> テキストボックスに文字を入力し、「適用」ボタンをクリックすると字幕が追加されます。</li>
+                  <li><strong>フォント変更:</strong> 字幕のフォントをドロップダウンメニューから選択できます。</li>
+                  <li><strong>リセット:</strong> 「調整をリセット」ボタンで全ての編集をリセットできます。</li>
+                  <li><strong>画像保存:</strong> 「画像をダウンロード」ボタンで編集した画像を保存できます。</li>
+                  <li><strong>Twitter投稿:</strong> 編集した画像をTwitterで共有できます。画像はクリップボードに保存されるので、画面が切り替わったら貼り付けをしてください</li>
+              </ul>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = new fabric.Canvas('canvas', { 
+            selection: false,
+            renderOnAddRemove: false,
+            enableRetinaScaling: false,
+            preserveObjectStacking: true
+        });
+        fabric.textureSize = 4096;
+        fabric.maxCacheSideLimit = 8192;
+
+        const imageUpload = document.getElementById('imageUpload');
+        const addLetterboxBtn = document.getElementById('addLetterbox');
+        const removeLetterboxBtn = document.getElementById('removeLetterbox');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const colorWheel = document.getElementById('colorWheel');
+        const colorWheelPicker = document.getElementById('colorWheelPicker');
+        const hueIntensitySlider = document.getElementById('hueIntensitySlider');
+        const filterSelect = document.getElementById('filterSelect');
+        const subtitleInput = document.getElementById('subtitleInput');
+        const applySubtitleBtn = document.getElementById('applySubtitle');
+        const fontSelect = document.getElementById('fontSelect');
+        const resetAdjustmentsBtn = document.getElementById('resetAdjustments');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const customFonts = {
+            'CustomFont1': './resource/Theatrism.ttf',
+            'CustomFont2': './resource/smartfontUI.otf'
+            // 必要に応じてカスタムフォントを追加
+        };
+        
+        let mainImage;
+        let letterboxTop, letterboxBottom;
+        let subtitleText;
+        let originalImageData;
+        let currentHue = 0;
+        let currentHueIntensity = 1;
+
+        // フォントのロード関数
+        function loadCustomFont(fontName) {
+            if (customFonts[fontName]) {
+                const font = new FontFace(fontName, `url(${customFonts[fontName]})`);
+                font.load().then(function(loadedFont) {
+                    document.fonts.add(loadedFont);
+                    console.log(`${fontName} has been loaded`);
+                    // フォントがロードされたら字幕を更新
+                    if (subtitleText) {
+                        subtitleText.set('fontFamily', fontName);
+                        canvas.requestRenderAll();
+                    }
+                }).catch(function(error) {
+                    console.error(`Error loading font ${fontName}:`, error);
+                });
+            }
+        }
+
+        // フォント選択イベントリスナーの修正
+        fontSelect.addEventListener('change', function() {
+            const selectedFont = fontSelect.value;
+            if (customFonts[selectedFont]) {
+                loadCustomFont(selectedFont);
+            }
+            addLetterboxAndSubtitle();
+        });
+        
+        function resizeCanvas() {
+            const container = document.getElementById('canvasContainer');
+            const ratio = container.offsetWidth / container.offsetHeight;
+            canvas.setDimensions({ width: container.offsetWidth, height: container.offsetWidth / ratio });
+            if (mainImage) {
+                centerImage();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function centerImage() {
+            mainImage.scaleToWidth(canvas.width);
+            if (mainImage.height * mainImage.scaleX > canvas.height) {
+                mainImage.scaleToHeight(canvas.height);
+            }
+            mainImage.set({
+                left: (canvas.width - mainImage.width * mainImage.scaleX) / 2,
+                top: (canvas.height - mainImage.height * mainImage.scaleY) / 2
+            });
+            canvas.requestRenderAll();
+        }
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                originalImageData = event.target.result;
+                loadImageWithFilters();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function loadImageWithFilters() {
+            const brightness = parseFloat(brightnessSlider.value);
+            const contrast = parseFloat(contrastSlider.value);
+            const selectedFilter = filterSelect.value;
+
+            fabric.Image.fromURL(originalImageData, function(img) {
+                canvas.clear();
+                mainImage = img;
+                mainImage.filters = [
+                    new fabric.Image.filters.Brightness({ brightness: brightness / 100 }),
+                    new fabric.Image.filters.Contrast({ contrast: contrast / 100 }),
+                    new fabric.Image.filters.HueRotation({ rotation: currentHue * currentHueIntensity })
+                ];
+
+                if (selectedFilter === 'sepia') {
+                    mainImage.filters.push(new fabric.Image.filters.Sepia());
+                } else if (selectedFilter === 'grayscale') {
+                    mainImage.filters.push(new fabric.Image.filters.Grayscale());
+                } else if (selectedFilter === 'invert') {
+                    mainImage.filters.push(new fabric.Image.filters.Invert());
+                }
+
+                mainImage.applyFilters();
+                mainImage.set({
+                    selectable: false,
+                    evented: false
+                });
+                canvas.add(mainImage);
+                centerImage();
+                addLetterboxAndSubtitle();
+                canvas.requestRenderAll();
+            }, { crossOrigin: 'anonymous' });
+        }
+
+        function addLetterboxAndSubtitle() {
+            if (!mainImage) return;
+
+            if (letterboxTop) canvas.remove(letterboxTop);
+            if (letterboxBottom) canvas.remove(letterboxBottom);
+            if (subtitleText) canvas.remove(subtitleText);
+
+            const letterboxHeight = canvas.height * 0.1;
+            letterboxTop = new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: canvas.width,
+                height: letterboxHeight,
+                fill: 'black',
+                selectable: false,
+                evented: false
+            });
+            letterboxBottom = new fabric.Rect({
+                left: 0,
+                top: canvas.height - letterboxHeight,
+                width: canvas.width,
+                height: letterboxHeight,
+                fill: 'black',
+                selectable: false,
+                evented: false
+            });
+
+            canvas.add(letterboxTop, letterboxBottom);
+
+            if (subtitleInput.value) {
+                const selectedFont = fontSelect.value;
+                subtitleText = new fabric.Text(subtitleInput.value, {
+                    left: canvas.width / 2,
+                    top: canvas.height - letterboxHeight / 2,
+                    fill: 'white',
+                    fontSize: letterboxHeight * 0.6,
+                    fontFamily: selectedFont,
+                    textAlign: 'center',
+                    originX: 'center',
+                    originY: 'center',
+                    selectable: false,
+                    evented: false
+                });
+                canvas.add(subtitleText);
+
+                // カスタムフォントの場合、ロードを確認
+                if (customFonts[selectedFont]) {
+                    loadCustomFont(selectedFont);
+                }
+            }
+
+            canvas.requestRenderAll();
+        }
+
+        applySubtitleBtn.addEventListener('click', addLetterboxAndSubtitle);
+        fontSelect.addEventListener('change', addLetterboxAndSubtitle);
+
+        addLetterboxBtn.addEventListener('click', addLetterboxAndSubtitle);
+
+        removeLetterboxBtn.addEventListener('click', function() {
+            if (letterboxTop) canvas.remove(letterboxTop);
+            if (letterboxBottom) canvas.remove(letterboxBottom);
+            if (subtitleText) canvas.remove(subtitleText);
+            letterboxTop = letterboxBottom = subtitleText = null;
+            canvas.requestRenderAll();
+        });
+
+        function applyFilters() {
+            if (!mainImage) return;
+            loadImageWithFilters();
+        }
+
+        brightnessSlider.addEventListener('input', applyFilters);
+        contrastSlider.addEventListener('input', applyFilters);
+        filterSelect.addEventListener('change', applyFilters);
+
+        colorWheel.addEventListener('click', function(e) {
+            const rect = colorWheel.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const x = e.clientX - rect.left - centerX;
+            const y = e.clientY - rect.top - centerY;
+            
+            // 角度の計算
+            const angle = Math.atan2(y, x);
+            currentHue = (angle + Math.PI) / (2 * Math.PI);
+
+            // 半径の計算（中心からクリック位置までの距離）
+            const radius = Math.min(Math.sqrt(x*x + y*y), centerX);
+            
+            // ピッカーの位置を更新
+            const pickerX = centerX + radius * Math.cos(angle);
+            const pickerY = centerY + radius * Math.sin(angle);
+            
+            colorWheelPicker.style.left = pickerX + 'px';
+            colorWheelPicker.style.top = pickerY + 'px';
+
+            applyFilters();
+        });
+
+        // 色相ホイールの初期ピッカー位置を設定
+        function setInitialPickerPosition() {
+            const rect = colorWheel.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            colorWheelPicker.style.left = centerX + 'px';
+            colorWheelPicker.style.top = centerY + 'px';
+        }
+
+        // ページ読み込み時に初期ピッカー位置を設定
+        window.addEventListener('load', setInitialPickerPosition);
+
+        // リセットボタンの処理を修正
+        resetAdjustmentsBtn.addEventListener('click', function() {
+            brightnessSlider.value = 0;
+            contrastSlider.value = 0;
+            currentHue = 0;
+            hueIntensitySlider.value = 100;
+            currentHueIntensity = 1;
+            filterSelect.value = 'none';
+            subtitleInput.value = '';
+            setInitialPickerPosition(); // ピッカーを中央に戻す
+            applyFilters();
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            if (!mainImage) return;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = mainImage.width;
+            tempCanvas.height = mainImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            const currentTransform = mainImage.calcTransformMatrix();
+            mainImage.setCoords();
+            mainImage.set({
+                left: 0,
+                top: 0,
+                scaleX: 1,
+                scaleY: 1,
+                angle: 0
+            });
+
+            mainImage.render(tempCtx);
+
+            mainImage.set(fabric.util.qrDecompose(currentTransform));
+            mainImage.setCoords();
+
+            if (letterboxTop && letterboxBottom) {
+                const letterboxHeight = tempCanvas.height * 0.1;
+                tempCtx.fillStyle = 'black';
+                tempCtx.fillRect(0, 0, tempCanvas.width, letterboxHeight);
+                tempCtx.fillRect(0, tempCanvas.height - letterboxHeight, tempCanvas.width, letterboxHeight);
+
+                if (subtitleText) {
+                    tempCtx.fillStyle = 'white';
+                    const selectedFont = fontSelect.value;
+                    tempCtx.font = `${letterboxHeight * 0.6}px ${selectedFont}`;
+                    tempCtx.textAlign = 'center';
+                    tempCtx.textBaseline = 'middle';
+                    tempCtx.fillText(subtitleText.text, tempCanvas.width / 2, tempCanvas.height - letterboxHeight / 2);
+                }
+            }
+
+            const dataURL = tempCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'edited-image.png';
+            link.href = dataURL;
+            link.click();
+
+            canvas.requestRenderAll();
+        });
+        // ツイッター投稿用の関数
+        async function shareOnTwitter() {
+            if (!mainImage) return;
+
+            // キャンバスを画像に変換
+            const dataUrl = canvas.toDataURL('image/png');
+
+            try {
+                // 画像をBlobに変換
+                const response = await fetch(dataUrl);
+                const blob = await response.blob();
+
+                // クリップボードにコピー
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]);
+
+                // ツイッター投稿ページを開く
+                const tweetText = encodeURIComponent('#LikeAOneShot #VRChat https://www.google.com');
+                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+
+                alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
+            } catch (err) {
+                console.error('Error:', err);
+                alert('画像のコピーに失敗しました。');
+            }
+        }
+
+        // ツイッターボタンにイベントリスナーを追加
+        const twitterBtn = document.getElementById('twitterBtn');
+        twitterBtn.addEventListener('click', shareOnTwitter);
+    </script>
+</body>
+</html>
