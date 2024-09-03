@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8QKVTWWWXY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8QKVTWWWXY');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Like a One Shot</title>
@@ -563,9 +572,15 @@
                     })
                 ]);
 
+                // Twitterの共有URLを作成
+                const tweetText = encodeURIComponent('LikeAOneShot,VRChat');
+                // 共有したいURLを設定（あなたのアプリやサービスのURLに置き換えてください）
+                const shareUrl = encodeURIComponent('https://asa58n.github.io/LikeAOneShot/');
+
+                // Twitter Intent URLを作成
+                const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
                 // ツイッター投稿ページを開く
-                const tweetText = encodeURIComponent('#LikeAOneShot #VRChat https://www.google.com');
-                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+                const w = window.open(twitterIntentUrl, '_blank');
 
                 alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
             } catch (err) {
