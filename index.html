@@ -223,6 +223,8 @@
                     <option value="CustomFont1">てあとりずむ</option>
                     <option value="CustomFont2">03スマートフォントUI+</option>
                 </select>
+                <label for="fontSizeSlider">文字サイズ:</label>
+                <input type="range" id="fontSizeSlider" min="10" max="100" value="60">
             </div>
             <div class="control-group">
                 <h3>操作</h3>
@@ -383,6 +385,12 @@
             }, { crossOrigin: 'anonymous' });
         }
 
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        function calculateFontSize(canvasHeight, sliderValue) {
+            // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
+            return canvasHeight * (sliderValue / 1000);
+        }
+      
         function addLetterboxAndSubtitle() {
             if (!mainImage) return;
 
@@ -414,11 +422,12 @@
 
             if (subtitleInput.value) {
                 const selectedFont = fontSelect.value;
+                const fontSize = calculateFontSize(canvas.height, parseInt(fontSizeSlider.value));
                 subtitleText = new fabric.Text(subtitleInput.value, {
                     left: canvas.width / 2,
                     top: canvas.height - letterboxHeight / 2,
                     fill: 'white',
-                    fontSize: letterboxHeight * 0.6,
+                    fontSize: fontSize,
                     fontFamily: selectedFont,
                     textAlign: 'center',
                     originX: 'center',
@@ -436,6 +445,10 @@
 
             canvas.requestRenderAll();
         }
+
+        // フォントサイズスライダーのイベントリスナーを追加
+        fontSizeSlider.addEventListener('input', addLetterboxAndSubtitle);
+
       
         hueIntensitySlider.addEventListener('input', function() {
             currentHueIntensity = parseFloat(hueIntensitySlider.value) / 100;
