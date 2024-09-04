@@ -222,6 +222,8 @@
                     <option value="CustomFont1">てあとりずむ</option>
                     <option value="CustomFont2">03スマートフォントUI+</option>
                 </select>
+                <label for="fontSizeSlider">文字サイズ:</label>
+                <input type="range" id="fontSizeSlider" min="10" max="100" value="60">
             </div>
             <div class="control-group">
                 <h3>操作</h3>
@@ -381,6 +383,7 @@
                 canvas.requestRenderAll();
             }, { crossOrigin: 'anonymous' });
         }
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
 
         function addLetterboxAndSubtitle() {
             if (!mainImage) return;
@@ -413,11 +416,12 @@
 
             if (subtitleInput.value) {
                 const selectedFont = fontSelect.value;
+                const fontSize = parseInt(fontSizeSlider.value); // 新しく追加
                 subtitleText = new fabric.Text(subtitleInput.value, {
                     left: canvas.width / 2,
                     top: canvas.height - letterboxHeight / 2,
                     fill: 'white',
-                    fontSize: letterboxHeight * 0.6,
+                    fontSize: fontSize, // letterboxHeight * 0.6 の代わりに fontSize を使用
                     fontFamily: selectedFont,
                     textAlign: 'center',
                     originX: 'center',
@@ -435,6 +439,9 @@
 
             canvas.requestRenderAll();
         }
+
+        // フォントサイズスライダーのイベントリスナーを追加
+        fontSizeSlider.addEventListener('input', addLetterboxAndSubtitle);
       
         hueIntensitySlider.addEventListener('input', function() {
             currentHueIntensity = parseFloat(hueIntensitySlider.value) / 100;
@@ -544,7 +551,8 @@
                 if (subtitleText) {
                     tempCtx.fillStyle = 'white';
                     const selectedFont = fontSelect.value;
-                    tempCtx.font = `${letterboxHeight * 0.6}px ${selectedFont}`;
+                    const fontSize = parseInt(fontSizeSlider.value);
+                    tempCtx.font = `${fontSize}px ${selectedFont}`;
                     tempCtx.textAlign = 'center';
                     tempCtx.textBaseline = 'middle';
                     tempCtx.fillText(subtitleText.text, tempCanvas.width / 2, tempCanvas.height - letterboxHeight / 2);
