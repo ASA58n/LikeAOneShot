@@ -390,7 +390,8 @@
             // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
             return canvasHeight * (sliderValue / 1000);
         }
-      
+
+
         function addLetterboxAndSubtitle() {
             if (!mainImage) return;
 
@@ -521,8 +522,10 @@
             currentHueIntensity = 1;
             filterSelect.value = 'none';
             subtitleInput.value = '';
+            fontSizeSlider.value = 60; // フォントサイズスライダーをリセット
             setInitialPickerPosition(); // ピッカーを中央に戻す
             applyFilters();
+            addLetterboxAndSubtitle(); // 字幕を更新
         });
 
         // 画像を生成する関数
@@ -558,7 +561,8 @@
                 if (subtitleText) {
                     tempCtx.fillStyle = 'white';
                     const selectedFont = fontSelect.value;
-                    tempCtx.font = `${letterboxHeight * 0.6}px ${selectedFont}`;
+                    const fontSize = calculateFontSize(tempCanvas.height, parseInt(fontSizeSlider.value));
+                    tempCtx.font = `${fontSize}px ${selectedFont}`;
                     tempCtx.textAlign = 'center';
                     tempCtx.textBaseline = 'middle';
                     tempCtx.fillText(subtitleText.text, tempCanvas.width / 2, tempCanvas.height - letterboxHeight / 2);
