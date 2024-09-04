@@ -384,6 +384,10 @@
             }, { crossOrigin: 'anonymous' });
         }
         const fontSizeSlider = document.getElementById('fontSizeSlider');
+        function calculateFontSize(canvasHeight, sliderValue) {
+            // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
+            return canvasHeight * (sliderValue / 1000);
+        }
 
         function addLetterboxAndSubtitle() {
             if (!mainImage) return;
@@ -416,12 +420,12 @@
 
             if (subtitleInput.value) {
                 const selectedFont = fontSelect.value;
-                const fontSize = parseInt(fontSizeSlider.value); // 新しく追加
+                const fontSize = calculateFontSize(canvas.height, parseInt(fontSizeSlider.value));
                 subtitleText = new fabric.Text(subtitleInput.value, {
                     left: canvas.width / 2,
                     top: canvas.height - letterboxHeight / 2,
                     fill: 'white',
-                    fontSize: fontSize, // letterboxHeight * 0.6 の代わりに fontSize を使用
+                    fontSize: fontSize,
                     fontFamily: selectedFont,
                     textAlign: 'center',
                     originX: 'center',
@@ -439,26 +443,6 @@
 
             canvas.requestRenderAll();
         }
-
-        // フォントサイズスライダーのイベントリスナーを追加
-        fontSizeSlider.addEventListener('input', addLetterboxAndSubtitle);
-      
-        hueIntensitySlider.addEventListener('input', function() {
-            currentHueIntensity = parseFloat(hueIntensitySlider.value) / 100;
-            applyFilters();
-        });
-        applySubtitleBtn.addEventListener('click', addLetterboxAndSubtitle);
-        fontSelect.addEventListener('change', addLetterboxAndSubtitle);
-
-        addLetterboxBtn.addEventListener('click', addLetterboxAndSubtitle);
-
-        removeLetterboxBtn.addEventListener('click', function() {
-            if (letterboxTop) canvas.remove(letterboxTop);
-            if (letterboxBottom) canvas.remove(letterboxBottom);
-            if (subtitleText) canvas.remove(subtitleText);
-            letterboxTop = letterboxBottom = subtitleText = null;
-            canvas.requestRenderAll();
-        });
 
         function applyFilters() {
             if (!mainImage) return;
@@ -551,7 +535,7 @@
                 if (subtitleText) {
                     tempCtx.fillStyle = 'white';
                     const selectedFont = fontSelect.value;
-                    const fontSize = parseInt(fontSizeSlider.value);
+                    const fontSize = calculateFontSize(tempCanvas.height, parseInt(fontSizeSlider.value));
                     tempCtx.font = `${fontSize}px ${selectedFont}`;
                     tempCtx.textAlign = 'center';
                     tempCtx.textBaseline = 'middle';
