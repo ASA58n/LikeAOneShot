@@ -557,16 +557,51 @@
 
             canvas.requestRenderAll();
         });
-        // ツイッター投稿用の関数
+        // ツイッター投稿用の関数を更新
         async function shareOnTwitter() {
             if (!mainImage) return;
 
-            // キャンバスを画像に変換
-            const dataUrl = canvas.toDataURL('image/png');
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = mainImage.width;
+            tempCanvas.height = mainImage.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            const currentTransform = mainImage.calcTransformMatrix();
+            mainImage.setCoords();
+            mainImage.set({
+                left: 0,
+                top: 0,
+                scaleX: 1,
+                scaleY: 1,
+                angle: 0
+            });
+
+            mainImage.render(tempCtx);
+
+            mainImage.set(fabric.util.qrDecompose(currentTransform));
+            mainImage.setCoords();
+
+            if (letterboxTop && letterboxBottom) {
+                const letterboxHeight = tempCanvas.height * 0.1;
+                tempCtx.fillStyle = 'black';
+                tempCtx.fillRect(0, 0, tempCanvas.width, letterboxHeight);
+                tempCtx.fillRect(0, tempCanvas.height - letterboxHeight, tempCanvas.width, letterboxHeight);
+
+                if (subtitleText) {
+                    tempCtx.fillStyle = 'white';
+                    const selectedFont = fontSelect.value;
+                    tempCtx.font = `${letterboxHeight * 0.6}px ${selectedFont}`;
+                    tempCtx.textAlign = 'center';
+                    tempCtx.textBaseline = 'middle';
+                    tempCtx.fillText(subtitleText.text, tempCanvas.width / 2, tempCanvas.height - letterboxHeight / 2);
+                }
+            }
+
+            const dataURL = tempCanvas.toDataURL('image/png');
 
             try {
                 // 画像をBlobに変換
-                const response = await fetch(dataUrl);
+                const response = await fetch(dataURL);
                 const blob = await response.blob();
 
                 // クリップボードにコピー
@@ -578,13 +613,12 @@
 
                 // Twitterの共有URLを作成
                 const tweetText = encodeURIComponent('LikeAOneShot,VRChat');
-                // 共有したいURLを設定（あなたのアプリやサービスのURLに置き換えてください）
                 const shareUrl = encodeURIComponent('https://asa58n.github.io/LikeAOneShot/');
 
                 // Twitter Intent URLを作成
                 const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
                 // ツイッター投稿ページを開く
-                const w = window.open(twitterIntentUrl, '_blank');
+                window.open(twitterIntentUrl, '_blank');
 
                 alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
             } catch (err) {
