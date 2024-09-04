@@ -448,6 +448,24 @@
 
         // フォントサイズスライダーのイベントリスナーを追加
         fontSizeSlider.addEventListener('input', addLetterboxAndSubtitle);
+
+      
+        hueIntensitySlider.addEventListener('input', function() {
+            currentHueIntensity = parseFloat(hueIntensitySlider.value) / 100;
+            applyFilters();
+        });
+        applySubtitleBtn.addEventListener('click', addLetterboxAndSubtitle);
+        fontSelect.addEventListener('change', addLetterboxAndSubtitle);
+
+        addLetterboxBtn.addEventListener('click', addLetterboxAndSubtitle);
+
+        removeLetterboxBtn.addEventListener('click', function() {
+            if (letterboxTop) canvas.remove(letterboxTop);
+            if (letterboxBottom) canvas.remove(letterboxBottom);
+            if (subtitleText) canvas.remove(subtitleText);
+            letterboxTop = letterboxBottom = subtitleText = null;
+            canvas.requestRenderAll();
+        });
       
         function applyFilters() {
             if (!mainImage) return;
