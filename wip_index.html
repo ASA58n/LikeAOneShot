@@ -384,10 +384,12 @@
             }, { crossOrigin: 'anonymous' });
         }
 
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
         function calculateFontSize(canvasHeight, sliderValue) {
             // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
             return canvasHeight * (sliderValue / 1000);
         }
+
 
         function addLetterboxAndSubtitle() {
             if (!mainImage) return;
@@ -444,6 +446,9 @@
             canvas.requestRenderAll();
         }
 
+        // フォントサイズスライダーのイベントリスナーを追加
+        fontSizeSlider.addEventListener('input', addLetterboxAndSubtitle);
+      
         function applyFilters() {
             if (!mainImage) return;
             loadImageWithFilters();
@@ -498,8 +503,10 @@
             currentHueIntensity = 1;
             filterSelect.value = 'none';
             subtitleInput.value = '';
+            fontSizeSlider.value = 60; // フォントサイズスライダーをリセット
             setInitialPickerPosition(); // ピッカーを中央に戻す
             applyFilters();
+            addLetterboxAndSubtitle(); // 字幕を更新
         });
 
         // 高品質の画像を生成する関数
