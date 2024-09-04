@@ -511,8 +511,9 @@
             applyFilters();
         });
 
-        downloadBtn.addEventListener('click', function() {
-            if (!mainImage) return;
+        // 画像を生成する関数
+        function generateHighQualityImage() {
+            if (!mainImage) return null;
 
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = mainImage.width;
@@ -550,75 +551,55 @@
                 }
             }
 
-            const dataURL = tempCanvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.download = 'edited-image.png';
-            link.href = dataURL;
-            link.click();
+            return tempCanvas.toDataURL('image/png');
+        }
 
-            canvas.requestRenderAll();
-        });
-        // ツイッター投稿用の関数を更新
-        async function shareOnTwitter() {
-            if (!mainImage) return;
-
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = mainImage.width;
-            tempCanvas.height = mainImage.height;
-            const tempCtx = tempCanvas.getContext('2d');
-
-            const currentTransform = mainImage.calcTransformMatrix();
-            mainImage.setCoords();
-            mainImage.set({
-                left: 0,
-                top: 0,
-                scaleX: 1,
-                scaleY: 1,
-                angle: 0
-            });
-
-            mainImage.render(tempCtx);
-
-            mainImage.set(fabric.util.qrDecompose(currentTransform));
-            mainImage.setCoords();
-
-            if (letterboxTop && letterboxBottom) {
-                const letterboxHeight = tempCanvas.height * 0.1;
-                tempCtx.fillStyle = 'black';
-                tempCtx.fillRect(0, 0, tempCanvas.width, letterboxHeight);
-                tempCtx.fillRect(0, tempCanvas.height - letterboxHeight, tempCanvas.width, letterboxHeight);
-
-                if (subtitleText) {
-                    tempCtx.fillStyle = 'white';
-                    const selectedFont = fontSelect.value;
-                    tempCtx.font = `${letterboxHeight * 0.6}px ${selectedFont}`;
-                    tempCtx.textAlign = 'center';
-                    tempCtx.textBaseline = 'middle';
-                    tempCtx.fillText(subtitleText.text, tempCanvas.width / 2, tempCanvas.height - letterboxHeight / 2);
-                }
+        // クリップボードにコピーする関数
+        async function copyToClipboard() {
+            const dataURL = generateHighQualityImage();
+            if (!dataURL) {
+                alert('画像が選択されていません。');
+                return;
             }
-
-            const dataURL = tempCanvas.toDataURL('image/png');
 
             try {
-                // 画像をBlobに変換
                 const response = await fetch(dataURL);
                 const blob = await response.blob();
 
-                // クリップボードにコピー
                 await navigator.clipboard.write([
                     new ClipboardItem({
                         'image/png': blob
                     })
                 ]);
 
-                // Twitterの共有URLを作成
+                alert('画像がクリップボードにコピーされました。');
+            } catch (err) {
+                console.error('Error:', err);
+                alert('画像のコピーに失敗しました。');
+            }
+        }
+
+        // ツイッター投稿用の関数を更新
+        async function shareOnTwitter() {
+            const dataURL = generateHighQualityImage();
+            if (!dataURL) {
+                alert('画像が選択されていません。');
+                return;
+            }
+
+            try {
+                const response = await fetch(dataURL);
+                const blob = await response.blob();
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]);
+
                 const tweetText = encodeURIComponent('LikeAOneShot,VRChat');
                 const shareUrl = encodeURIComponent('https://asa58n.github.io/LikeAOneShot/');
-
-                // Twitter Intent URLを作成
                 const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
-                // ツイッター投稿ページを開く
                 window.open(twitterIntentUrl, '_blank');
 
                 alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
@@ -627,6 +608,24 @@
                 alert('画像のコピーに失敗しました。');
             }
         }
+
+        // ダウンロードボタンの処理を更新
+        downloadBtn.addEventListener('click', function() {
+            const dataURL = generateHighQualityImage();
+            if (!dataURL) {
+                alert('画像が選択されていません。');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.download = 'edited-image.png';
+            link.href = dataURL;
+            link.click();
+        });
+
+        // クリップボードにコピーボタンにイベントリスナーを追加
+        const copyToClipboardBtn = document.getElementById('copyToClipboardBtn');
+        copyToClipboardBtn.addEventListener('click', copyToClipboard);
 
         // ツイッターボタンにイベントリスナーを追加
         const twitterBtn = document.getElementById('twitterBtn');
