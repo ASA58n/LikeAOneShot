@@ -383,7 +383,7 @@
                 canvas.requestRenderAll();
             }, { crossOrigin: 'anonymous' });
         }
-        const fontSizeSlider = document.getElementById('fontSizeSlider');
+
         function calculateFontSize(canvasHeight, sliderValue) {
             // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
             return canvasHeight * (sliderValue / 1000);
