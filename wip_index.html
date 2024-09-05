@@ -167,6 +167,7 @@
     <div class="container">
         <h1>Like a One Shot</h1>
         <p class="description">VRCの写真を映画やゲームのワンシーンみたいに編集するウェブアプリです</p>
+        <p class="description">Twitterに投稿するときに #LikeAOneShot タグつけてもらえると見に行きます。作者喜びます。</p>
         <div id="canvasContainer">
             <canvas id="canvas"></canvas>
         </div>
@@ -201,6 +202,8 @@
                     <option value="grayscale">白黒</option>
                     <option value="invert">色反転</option>
                 </select>
+                <label for="blurSlider">ぼかし:</label>
+                <input type="range" id="blurSlider" min="0" max="10" value="0" step="0.1">
                 <label for="subtitleInput">字幕:</label>
                 <div class="subtitle-input-group">
                     <input type="text" id="subtitleInput" placeholder="字幕を入力">
@@ -350,10 +353,18 @@
             reader.readAsDataURL(file);
         });
 
+        // グローバル変数にブラー強度を追加
+        let currentBlur = 0;
+        
+        // ブラースライダーの要素を取得
+        const blurSlider = document.getElementById('blurSlider');
+        
+        // loadImageWithFilters関数を更新
         function loadImageWithFilters() {
             const brightness = parseFloat(brightnessSlider.value);
             const contrast = parseFloat(contrastSlider.value);
             const selectedFilter = filterSelect.value;
+            const blurAmount = parseFloat(blurSlider.value);
 
             fabric.Image.fromURL(originalImageData, function(img) {
                 canvas.clear();
@@ -361,7 +372,8 @@
                 mainImage.filters = [
                     new fabric.Image.filters.Brightness({ brightness: brightness / 100 }),
                     new fabric.Image.filters.Contrast({ contrast: contrast / 100 }),
-                    new fabric.Image.filters.HueRotation({ rotation: currentHue * currentHueIntensity })
+                    new fabric.Image.filters.HueRotation({ rotation: currentHue * currentHueIntensity }),
+                    new fabric.Image.filters.Blur({ blur: blurAmount })
                 ];
 
                 if (selectedFilter === 'sepia') {
@@ -383,7 +395,20 @@
                 canvas.requestRenderAll();
             }, { crossOrigin: 'anonymous' });
         }
-
+        
+        // ブラースライダーのイベントリスナーを追加
+        blurSlider.addEventListener('input', applyFilters);
+        
+        // リセットボタンの処理を更新
+        resetAdjustmentsBtn.addEventListener('click', function() {
+            // 既存のリセット処理
+            
+            // ブラースライダーをリセット
+            blurSlider.value = 0;
+            
+            applyFilters();
+            addLetterboxAndSubtitle();
+        });
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         function calculateFontSize(canvasHeight, sliderValue) {
             // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
@@ -466,7 +491,7 @@
             letterboxTop = letterboxBottom = subtitleText = null;
             canvas.requestRenderAll();
         });
-      
+
         function applyFilters() {
             if (!mainImage) return;
             loadImageWithFilters();
@@ -527,7 +552,7 @@
             addLetterboxAndSubtitle(); // 字幕を更新
         });
 
-        // 高品質の画像を生成する関数
+        // 画像を生成する関数
         function generateHighQualityImage() {
             if (!mainImage) return null;
 
@@ -619,7 +644,7 @@
                 const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
                 window.open(twitterIntentUrl, '_blank');
 
-                alert('高品質の画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
+                alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
             } catch (err) {
                 console.error('Error:', err);
                 alert('画像のコピーに失敗しました。');
