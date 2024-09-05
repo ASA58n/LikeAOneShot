@@ -202,6 +202,8 @@
                     <option value="grayscale">白黒</option>
                     <option value="invert">色反転</option>
                 </select>
+                <label for="blurSlider">ぼかし:</label>
+                <input type="range" id="blurSlider" min="0" max="10" value="0" step="0.1">
                 <label for="subtitleInput">字幕:</label>
                 <div class="subtitle-input-group">
                     <input type="text" id="subtitleInput" placeholder="字幕を入力">
@@ -351,10 +353,18 @@
             reader.readAsDataURL(file);
         });
 
+        // グローバル変数にブラー強度を追加
+        let currentBlur = 0;
+        
+        // ブラースライダーの要素を取得
+        const blurSlider = document.getElementById('blurSlider');
+        
+        // loadImageWithFilters関数を更新
         function loadImageWithFilters() {
             const brightness = parseFloat(brightnessSlider.value);
             const contrast = parseFloat(contrastSlider.value);
             const selectedFilter = filterSelect.value;
+            const blurAmount = parseFloat(blurSlider.value);
 
             fabric.Image.fromURL(originalImageData, function(img) {
                 canvas.clear();
@@ -362,7 +372,8 @@
                 mainImage.filters = [
                     new fabric.Image.filters.Brightness({ brightness: brightness / 100 }),
                     new fabric.Image.filters.Contrast({ contrast: contrast / 100 }),
-                    new fabric.Image.filters.HueRotation({ rotation: currentHue * currentHueIntensity })
+                    new fabric.Image.filters.HueRotation({ rotation: currentHue * currentHueIntensity }),
+                    new fabric.Image.filters.Blur({ blur: blurAmount })
                 ];
 
                 if (selectedFilter === 'sepia') {
@@ -384,7 +395,20 @@
                 canvas.requestRenderAll();
             }, { crossOrigin: 'anonymous' });
         }
-
+        
+        // ブラースライダーのイベントリスナーを追加
+        blurSlider.addEventListener('input', applyFilters);
+        
+        // リセットボタンの処理を更新
+        resetAdjustmentsBtn.addEventListener('click', function() {
+            // 既存のリセット処理
+            
+            // ブラースライダーをリセット
+            blurSlider.value = 0;
+            
+            applyFilters();
+            addLetterboxAndSubtitle();
+        });
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         function calculateFontSize(canvasHeight, sliderValue) {
             // スライダーの値（10-100）をキャンバスの高さに対する割合（1%-10%）に変換
