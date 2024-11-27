@@ -640,8 +640,9 @@
                 ]);
 
                 const tweetText = encodeURIComponent('LikeAOneShot,VRChat');
-                const shareUrl = encodeURIComponent('https://asa58n.github.io/LikeAOneShot/');
-                const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
+                // const shareUrl = encodeURIComponent('https://asa58n.github.io/LikeAOneShot/');
+                // const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}&url=${shareUrl}%0A`;
+                const twitterIntentUrl = `https://twitter.com/intent/tweet?hashtags=${tweetText}%0A`;
                 window.open(twitterIntentUrl, '_blank');
 
                 alert('画像がクリップボードにコピーされました。ツイッターのタブで貼り付けてツイートしてください。');
